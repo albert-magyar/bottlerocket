@@ -194,7 +194,7 @@ class FrontendBuffer(options: BROptions) extends Module {
   } .otherwise {
     io.resp.valid := Bool(true)
     io.resp.bits.inst := Cat(next_halfword, head_halfword)
-    io.resp.bits.error := err_vec(buf_head) || err_vec(buf_head + UInt(1))
+    io.resp.bits.error := err_vec(buf_head) || err_vec(buf_head + UInt(1)) && !isRVC(buf_vec(buf_head))
   }
 
 }
