@@ -154,3 +154,23 @@ Located in ./rocket-chip/src/main/scala/rocket/*
 * __Consts.scala__ This contains the encoding of microarchitectural control signals, such as memory operation identifiers and ALU operations. Unlike the values in "Instructions," these values are not specified by the ISA.
 
 * __ALU.scala__ Rocket includes a simple ALU that is parameterizable for 32-bit or 64-bit width.
+
+## Core Microarchitecture Description
+
+The BottleRocket core uses a simple, 3-stage pipeline with a one-cycle branch penalty. It is designed to be used with an instruction cache or similar memory bus connection with a short delay and no wait states for cache hits.
+
+### Simplified pipeline diagram (some signals omitted for clarity)
+
+Yellow blocks are library components found in the Rocket Chip repository. Blue blocks and all pipeline registers are defined in the BottleRocket-specific source files.
+
+![Pipeline diagram](https://raw.githubusercontent.com/albert-magyar/bottlerocket/master/pipeline.png)
+
+## Physical Memory Protection
+
+BottleRocket implements the Physical Memory Protection (PMP) scheme outlined in Section 3.6 of the RISC-V privileged architecture, version 1.10. It uses a configurable number of PMP regions, which is controlled via the `nPMPs` parameter in the __Params.scala__ file in the bottlerocket package. This parameter may be set to zero, which has the effect of disabling the PMP feature.
+
+Regardless of the number of regions, the core employs two `PMPChecker` modules (borrowed from Rocket): one for checking fetch accesses, and one for checking load/store accesses. In addition to receiving metadata about memory transactions and producing potential exceptions, these checkers are connected to the PMP­related outputs from the CSR file, where the PMP configuration CSRs are housed. Since BottleRocket has a very shallow pipeline, enabling PMP will add some delay to some memory-related paths; if this poses a physical design issue, PMP may be disabled.
+
+### Omitting Physical Memory Protection
+
+Setting the number of PMP regions to zero eliminates all logic related to PMP registers in the CSR file. Furthermore, the Rocket PMP checker implementation is parameterized by the number of PMP regions, and adds no logic or delay to the pipeline when the number of PMP regions is set to zero. Therefore, setting `nPMPs` to zero is equivalent to omitting all PMP-related logic and implementation cost from the design.
