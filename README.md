@@ -113,3 +113,44 @@ the RISCV environment variable points to the RISC-V toolchain installation.
    ```bash
    $ sbt "runMain bottlerocket.BottleRocketGenerator --help"
    ```
+## A Tour of the Source Code
+
+There are 2 main categories of design units in BottleRocket: subcomponents that are borrowed from Rocket Chip and custom elements of the BottleRocket core.
+
+### BottleRocket Components
+
+Located in ./src/main/scala/bottlerocket/*
+
+* __BottleRocketGenerator.scala__ The top-level generator consists of Chisel generation boilerplate and command line argument management.
+
+* __BottleRocketCore.scala__ This is the implementation of the 3-stage core. Most control logic is factored into large modules, so the top-level module contains mostly pipeline registers, connections, and pieces of control logic that touch many signals in multiple stages, such as hazard detection.
+  
+* __FrontendBuffer.scala__ This module interfaces with the instruction bus and manages outstanding transactions. It is decoupled from the core, which makes it easier to manage events like misaligned 32-bit accesses (arising from RVC compatibility) and dropping outstanding requests that are rendered useless upon a branch or other redirect.
+
+* __DebugModuleFSM.scala__ This module implements the Debug Module Interface (DMI) for the SiFive Debug Specification, v0.13
+
+* __DebugStepper.scala__ This test module attaches to the DMI and repeatedly halts and single-steps the core, stress-testing debug actions.
+
+* __Constants.scala__ This contains non-ISA-defined constants, such as microarchitectural control signal values.
+
+* __ExceptionCause.scala__ This defines a format for encoding the set of exceptions caused by a particular instruction’s execution, so that they may be passed along with the instruction through the pipeline and recorded at commit time.
+
+* __LoadExtender.scala__ The load extender turns bus replies into writeback values, based on the type of load and desired extension (signed or unsigned).
+
+* __AXI4Lite.scala__ Contains a definition of the ARM AMBA AXI4Lite interface as a Chisel `Bundle`.
+
+### Components Borrowed from Rocket Chip
+
+Located in ./rocket-chip/src/main/scala/rocket/*
+
+* __Instructions.scala__ This contains ISA-specified encoding information for instructions, interrupt causes, CSRs, and anything else from the base or privileged ISA.
+
+* __CSR.scala__ This contains the implementation of the Control and Status Register (CSR) file. The CSR file is the most complicated part of implementing a RISC-V core, and manages essentially every aspect of the architecture related to the privileged architecture, including interrupt handling and wfi instructions.
+
+* __PMP.scala__ This contains the checker logic that enforces Physical Memory Protect violations.
+
+* __Multiplier.scala__ A multi-cycle hardware iterative multiplier/divider that is parametrizable to take a variable number of cycles. By default, it takes 8 cycles to perform a multiplication or division, and it takes constant time, with the no-early-out feature enabled.
+
+* __Consts.scala__ This contains the encoding of microarchitectural control signals, such as memory operation identifiers and ALU operations. Unlike the values in "Instructions," these values are not specified by the ISA.
+
+* __ALU.scala__ Rocket includes a simple ALU that is parameterizable for 32-bit or 64-bit width.
