@@ -163,6 +163,7 @@ The BottleRocket core uses a simple, 3-stage pipeline with a one-cycle branch pe
 
 Yellow blocks are library components found in the Rocket Chip repository. Blue blocks and all pipeline registers are defined in the BottleRocket-specific source files.
 
+*TODO: insert pipeline diagram*
 ![Pipeline diagram](https://raw.githubusercontent.com/albert-magyar/bottlerocket/master/pipeline.png)
 
 ## Physical Memory Protection
@@ -174,3 +175,53 @@ Regardless of the number of regions, the core employs two `PMPChecker` modules (
 ### Omitting Physical Memory Protection
 
 Setting the number of PMP regions to zero eliminates all logic related to PMP registers in the CSR file. Furthermore, the Rocket PMP checker implementation is parameterized by the number of PMP regions, and adds no logic or delay to the pipeline when the number of PMP regions is set to zero. Therefore, setting `nPMPs` to zero is equivalent to omitting all PMP-related logic and implementation cost from the design.
+
+## Interrupt Architecture
+
+The BottleRocket core supports all of the features of 'M' mode and 'U' mode for the RISC-V privileged architecture. This core privileged specification contains only three interrupt types: a timer interrupt, a software interrupt (set by software to signal other harts), and a generic external interrupt. In order to support an arbitrary number of device interrupts, BottleRocket includes a programmable interrupt controller peripheral that is not specified by the RISC-V ISA.
+
+### RISC-V Interrupt Model
+
+The full description of interrupts in the base RISC-V ISA is found in the RISC-V privileged architecture specification. However, there are some key aspects to note for programmers accustomed to other architectures.
+
+* There is a two-entry hardware stack of interrupt-enable and privilege mode bits in the `mstatus` register. The current context's entry is on top of the stack, while the previous context’s entry is at the bottom, accessible in the previous privilege and previous interrupt enable fields.
+
+* When an interrupt is taken, an entry representing machine mode with interrupts disabled is pushed onto the stack, the address of the interrupted instruction is moved into `mepc`, and the machine jumps to the handler address stored in `mtvec`.
+
+* No general-purpose registers are saved on interrupt entry or restored on interrupt return.
+
+* Interrupt handlers are non-preemptible by default. If preemption is desired, software must manage the preservation of state so that interrupts may be re-enabled in the handler.
+
+## External Debug
+
+BottleRocket implements [version 0.13.7 of the SiFive proposed debug spec](https://www.sifive.com/documentation/risc-v/risc-v-external-debug-support/). It is extremely likely that the ratified debug specification will not differ in any meaningful way, since many elements of the debug spec are optional, and the required core that BottleRocket implements is stable across current revisions. Furthermore, much of the spec deals with the ability to debug multiple RISC-V hardware threads (harts); these details are not relevant for a system with one RISC-V core.
+
+The full debug spec provides an excessively large amount of information for the required subset implemented in BottleRocket, so the following is a condensed description of the debug architecture.
+
+### Debug Architecture
+
+#### Debug Module Registers
+
+##### `Abstract data 0 (0x04)`
+
+*TODO: insert bitfield table*
+
+The abstract data 0 register is used for two purposes: to hold argument data for the next abstract command, and to hold result data from the last abstract command. Typically, a command would begin by writing arguments to the data registers before writing to the abstract command / control / status registers to initiate the command. Although the RISC-V debug spec defines a larger number of optional abstract data registers, none of the commands supported by BottleRocket require more than 32 bits of argument or result data.
+
+##### `Debug Module Control (0x10)`
+
+*TODO: insert bitfield table*
+
+The halt request bit will initiate a halt state in the RISC-V core. It make take a variable amount of time to enter the halt state, so it is necessary to check the `allhalted` bit in the `dmstatus` register to see whether the core is actually halted. Similarly, raising `resumereq` requires the programmer to check `resumeack` in `dmstatus` to see whether the core has actually resumed. Neither bit will clear itself, and having both request bits high will result in undefined behavior (per the RISC-V debug spec), so it is necessary to clear a halt request before resuming a halted hart and vice-versa.
+
+##### `Debug Module Status (0x11)`
+
+*TODO: insert bitfield table*
+
+##### `Abstract Control and Status (0x16)`
+
+*TODO: insert bitfield table*
+
+##### `Abstract Command (0x17)`
+
+*TODO: insert bitfield table*
