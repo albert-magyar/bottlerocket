@@ -13,6 +13,7 @@
 *.hex
 *.trn
 *.dsn
+*.vpd
 test/*.d
 test/*.ld
 test/*.addrs
