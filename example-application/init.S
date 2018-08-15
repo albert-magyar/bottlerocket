@@ -31,6 +31,6 @@ boot:
         addi x30, x0, 0
         addi x31, x0, 0
 init:
-        li sp, 0xFFFFFFFF
+        li sp, 0x1999C
         la t0, main
         jr t0
