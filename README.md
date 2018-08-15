@@ -198,30 +198,28 @@ BottleRocket implements [version 0.13.7 of the SiFive proposed debug spec](https
 
 The full debug spec provides an excessively large amount of information for the required subset implemented in BottleRocket, so the following is a condensed description of the debug architecture.
 
-### Debug Architecture
+### Debug Module Registers
 
-#### Debug Module Registers
-
-##### `Abstract data 0 (0x04)`
+#### `Abstract data 0 (0x04)`
 
 *TODO: insert bitfield table*
 
 The abstract data 0 register is used for two purposes: to hold argument data for the next abstract command, and to hold result data from the last abstract command. Typically, a command would begin by writing arguments to the data registers before writing to the abstract command / control / status registers to initiate the command. Although the RISC-V debug spec defines a larger number of optional abstract data registers, none of the commands supported by BottleRocket require more than 32 bits of argument or result data.
 
-##### `Debug Module Control (0x10)`
+#### `Debug Module Control (0x10)`
 
 *TODO: insert bitfield table*
 
 The halt request bit will initiate a halt state in the RISC-V core. It make take a variable amount of time to enter the halt state, so it is necessary to check the `allhalted` bit in the `dmstatus` register to see whether the core is actually halted. Similarly, raising `resumereq` requires the programmer to check `resumeack` in `dmstatus` to see whether the core has actually resumed. Neither bit will clear itself, and having both request bits high will result in undefined behavior (per the RISC-V debug spec), so it is necessary to clear a halt request before resuming a halted hart and vice-versa.
 
-##### `Debug Module Status (0x11)`
+#### `Debug Module Status (0x11)`
 
 *TODO: insert bitfield table*
 
-##### `Abstract Control and Status (0x16)`
+#### `Abstract Control and Status (0x16)`
 
 *TODO: insert bitfield table*
 
-##### `Abstract Command (0x17)`
+#### `Abstract Command (0x17)`
 
 *TODO: insert bitfield table*
