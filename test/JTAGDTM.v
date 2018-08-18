@@ -25,14 +25,14 @@
 `define TDATA1 'h7a1
 `define TDATA2 'h7a2
 
-task automatic pause;
+task pause;
    begin
       repeat (10)
         @(negedge TCK);
    end
 endtask
 
-task automatic tap_ns;
+task tap_ns;
    input val;
    begin
       TMS = val;
@@ -42,7 +42,7 @@ endtask
 
 // Starts from any state
 // Ends in Run-Test/Idle
-task automatic reset_tap;
+task reset_tap;
    begin
       @(negedge TCK);
       TMS = 1'b1;
@@ -57,12 +57,12 @@ endtask // repeat
 
 // Starts from Shift
 // Ends in Exit1
-task automatic shift_value;
+task shift_value;
    output [`DMI_DR_WIDTH-1:0] out_value;
    input  [`DMI_DR_WIDTH-1:0] in_value;
    input integer              shift_width;
-   automatic integer          count;
-   automatic reg [`DMI_DR_WIDTH-1:0] sr;
+   integer          count;
+   reg [`DMI_DR_WIDTH-1:0] sr;
    begin
       count = 1;
       sr = in_value;
@@ -85,8 +85,8 @@ endtask // while
 
 // Starts from Run-Test/Idle
 // Ends in Run-Test/Idle
-task automatic read_idcode;
-   automatic reg [`DMI_DR_WIDTH-1:0] tmp;
+task read_idcode;
+   reg [`DMI_DR_WIDTH-1:0] tmp;
    begin
       tap_ns(1'b1); // Select-DR Scan
       tap_ns(1'b0); // Capture-DR
@@ -100,9 +100,9 @@ endtask // tap_ns
 
 // Starts from Run-Test/Idle
 // Ends in Run-Test/Idle
-task automatic write_ir;
+task write_ir;
    input reg [`IR_WIDTH-1:0] ir_value;
-   automatic reg [`IR_WIDTH-1:0] tmp;
+   reg [`IR_WIDTH-1:0] tmp;
    begin
       tap_ns(1'b1); // Select-DR Scan
       tap_ns(1'b1); // Select-IR Scan
@@ -117,10 +117,10 @@ endtask
 
 // Starts from Run-Test/Idle
 // Ends in Run-Test/Idle
-task automatic initialize_dr;
+task initialize_dr;
    input reg [`DMI_DR_WIDTH-1:0] dr_value;
    input integer dr_width;
-   automatic reg [`DMI_DR_WIDTH-1:0] tmp;
+   reg [`DMI_DR_WIDTH-1:0] tmp;
    begin
       tap_ns(1'b1); // Select-DR Scan
       tap_ns(1'b0); // Capture-DR
@@ -133,7 +133,7 @@ endtask // tap_ns
 
 // Starts from Run-Test/Idle
 // Ends in Pause-DR with DMI in IR
-task automatic initialize_dtm;
+task initialize_dtm;
    begin
       reset_tap(); // Ends in Run-Test/Idle
       read_idcode();
@@ -150,13 +150,13 @@ endtask
 
 // Starts from Pause-DR
 // Ends in Pause-DR
-task automatic write_and_read_dmi_dr;
+task write_and_read_dmi_dr;
    input  [1:0]                 op;
    input  [31:0]                data;
    input  [`DMI_ADDR_WIDTH-1:0] addr;
    output [1:0]                 resp_op;
    output [31:0]                resp_data;
-   automatic reg [`DMI_DR_WIDTH-1:0] tmp;
+   reg [`DMI_DR_WIDTH-1:0] tmp;
    begin
       tap_ns(1'b1); // Exit2-DR
       tap_ns(1'b0); // Shift-DR
@@ -183,38 +183,38 @@ task automatic write_and_read_dmi_dr;
    end
 endtask
 
-task automatic reset_dm;
-   automatic reg [1:0] resp_op;
-   automatic reg [31:0] resp_data;
+task reset_dm;
+   reg [1:0] resp_op;
+   reg [31:0] resp_data;
    begin
       write_and_read_dmi_dr(`DMI_WRITE_OP, 32'b0, `DMCONTROL, resp_op, resp_data);
       write_and_read_dmi_dr(`DMI_WRITE_OP, 32'b1, `DMCONTROL, resp_op, resp_data);
    end
 endtask
 
-task automatic read_dmi_reg;
+task read_dmi_reg;
    input [`DMI_ADDR_WIDTH-1:0] addr;
    output [31:0]                rdata;
-   automatic reg [1:0] resp_op;
-   automatic reg [31:0] resp_data;
+   reg [1:0] resp_op;
+   reg [31:0] resp_data;
    begin
       write_and_read_dmi_dr(`DMI_READ_OP, 0, addr, resp_op, resp_data);
       rdata = resp_data;
    end
 endtask
 
-task automatic write_dmi_reg;
+task write_dmi_reg;
    input [`DMI_ADDR_WIDTH-1:0] addr;
    input [31:0]                wdata;
-   automatic reg [1:0] resp_op;
-   automatic reg [31:0] resp_data;
+   reg [1:0] resp_op;
+   reg [31:0] resp_data;
    begin
       write_and_read_dmi_dr(`DMI_WRITE_OP, wdata, addr, resp_op, resp_data);
    end
 endtask
 
-task automatic halt;
-   automatic reg [31:0] dmstatus;
+task halt;
+   reg [31:0] dmstatus;
    begin
       write_dmi_reg(`DMCONTROL, 32'h80000001);
       read_dmi_reg(`DMSTATUS, dmstatus);
@@ -225,17 +225,17 @@ task automatic halt;
    end
 endtask
 
-task automatic check_halted;
+task check_halted;
    output halted;
-   automatic reg [31:0] dmstatus;
+   reg [31:0] dmstatus;
    begin
       read_dmi_reg(`DMSTATUS, dmstatus);
       halted = dmstatus[9];
    end
 endtask
 
-task automatic resume;
-   automatic reg [31:0] dmstatus;
+task resume;
+   reg [31:0] dmstatus;
    begin
       write_dmi_reg(`DMCONTROL, 32'h40000001);
       read_dmi_reg(`DMSTATUS, dmstatus);
@@ -246,7 +246,7 @@ task automatic resume;
    end
 endtask
 
-task automatic sba_bus_write;
+task sba_bus_write;
    input [31:0] addr;
    input [31:0] wdata;
    begin
@@ -255,10 +255,10 @@ task automatic sba_bus_write;
    end
 endtask
 
-task automatic sba_bus_read;
+task sba_bus_read;
    input [31:0] addr;
    output [31:0] rdata;
-   automatic reg [31:0] tmp;
+   reg [31:0] tmp;
    begin
       write_dmi_reg(`SBADDRESS0, addr);
       write_dmi_reg(`SBCS, 32'h140000);
@@ -267,7 +267,7 @@ task automatic sba_bus_read;
    end
 endtask
 
-task automatic write_any_reg;
+task write_any_reg;
    input [15:0] addr;
    input [31:0] wdata;
    begin
@@ -276,7 +276,7 @@ task automatic write_any_reg;
    end
 endtask // write_dmi_reg
 
-task automatic read_any_reg;
+task read_any_reg;
    input [15:0] addr;
    output [31:0] rdata;
    begin
@@ -285,7 +285,7 @@ task automatic read_any_reg;
    end
 endtask
 
-task automatic write_csr;
+task write_csr;
    input [11:0] addr;
    input [31:0] wdata;
    begin
@@ -293,7 +293,7 @@ task automatic write_csr;
    end
 endtask
 
-task automatic read_csr;
+task read_csr;
    input [11:0] addr;
    output [31:0] rdata;
    begin
@@ -301,7 +301,7 @@ task automatic read_csr;
    end
 endtask
 
-task automatic write_gpr;
+task write_gpr;
    input [4:0] addr;
    input [31:0] wdata;
    begin
@@ -309,7 +309,7 @@ task automatic write_gpr;
    end
 endtask
 
-task automatic read_gpr;
+task read_gpr;
    input [4:0] addr;
    output [31:0] rdata;
    begin
@@ -317,7 +317,7 @@ task automatic read_gpr;
    end
 endtask
 
-task automatic set_breakpoint;
+task set_breakpoint;
    input [2:0] exec_store_load_mask;
    input [31:0] addr;
    begin
@@ -327,15 +327,15 @@ task automatic set_breakpoint;
    end
 endtask
 
-task automatic clear_breakpoint;
+task clear_breakpoint;
    begin
       write_csr(`TSELECT, 0);
       write_csr(`TDATA1, 32'h08001078);
    end
 endtask
 
-task automatic single_step;
-   automatic reg [31:0] tmp; 
+task single_step;
+   reg [31:0] tmp; 
    begin
       read_csr(`DCSR, tmp);
       write_csr(`DCSR, tmp | 'h4);
