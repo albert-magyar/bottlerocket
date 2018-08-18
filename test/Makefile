@@ -19,10 +19,18 @@ RISCV_GCC = riscv32-unknown-elf-gcc
 RISCV_GCC_OPTS = -static -mcmodel=medany -fvisibility=hidden -nostdlib -nostartfiles
 RISCV_OBJDUMP = riscv32-unknown-elf-objdump
 
-NCVERILOG_OPTS = +incdir+$(GEN_SRC_DIR) +sv +nctimescale+1ns/1ns +access+r +nclicq
+# Options: ncverilog, vcs
+SIM = vcs
 
-SIM ?= ncverilog
-SIM_OPTS ?= $(NCVERILOG_OPTS)
+NCVERILOG_OPTS = +incdir+$(GEN_SRC_DIR) +sv +nctimescale+1ns/1ns +access+r +nclicq
+VCS_OPTS = -full64 -debug_pp -sverilog +incdir+$(GEN_SRC_DIR)
+
+ifeq ($(SIM),vcs)
+SIM_COMMAND = ./simv
+SIM_PREREQS = simv
+else
+SIM_COMMAND = ncverilog $(NCVERILOG_OPTS)
+endif
 
 # fence_i not supported for Harvard architecture
 RV32UI_TESTS = addi \
@@ -76,24 +84,33 @@ RV32MI_TESTS = breakpoint \
 
 TESTS = $(RV32UI_TESTS) # $(RV32MI_TESTS)
 
-default: $(addsuffix .log, $(TESTS))
+default: $(addprefix test-outputs/, $(addsuffix .log, $(TESTS)))
 
-%.log: %.hex %.elf $(GEN_SRC_DIR)/*.v *.v
-	$(RISCV_OBJDUMP) -D $*.elf > $*.objdump
-	$(SIM) $(SIM_OPTS) +image=$* BottleRocketCoreTB.v &> $*.log
+simv: BottleRocketCoreTB.v MockAXI4LiteSRAM.v $(GEN_SRC_DIR)/*.v
+	vcs $(VCS_OPTS) $<
 
-%.hex: %.elf
+test-outputs:
+	mkdir -p test-outputs
+
+test-outputs/%.log: test-outputs/%.hex test-outputs/%.elf $(GEN_SRC_DIR)/*.v *.v $(SIM_PREREQS) | test-outputs
+	$(RISCV_OBJDUMP) -D test-outputs/$*.elf > test-outputs/$*.objdump
+	$(SIM_COMMAND) +image=$* BottleRocketCoreTB.v &> test-outputs/$*.log
+
+test-outputs/%.hex: test-outputs/%.elf | test-outputs
 	elf2hex 4 32768 $< > $@
 
-%.elf: $(RISCV_TEST_BASE)/isa/rv32ui/%.S
+test-outputs/%.elf: $(RISCV_TEST_BASE)/isa/rv32ui/%.S | test-outputs
 	$(RISCV_GCC) $(RISCV_GCC_OPTS) -I$(RISCV_TEST_BASE)/env/p -I$(RISCV_TEST_BASE)/isa/macros/scalar -Ttest.ld -o $@ $<
 
-%.elf: $(RISCV_TEST_BASE)/isa/rv32mi/%.S
+test-outputs/%.elf: $(RISCV_TEST_BASE)/isa/rv32mi/%.S | test-outputs
 	$(RISCV_GCC) $(RISCV_GCC_OPTS) -I$(RISCV_TEST_BASE)/env/p -I$(RISCV_TEST_BASE)/isa/macros/scalar -Ttest.ld -o $@ $<
 
-.SECONDARY: $(addsuffix .elf, $(TESTS)) $(addsuffix .hex, $(TESTS))
+package-sim: BottleRocketPackageTB.v JTAGDTM.v MockAsyncResetReg.v MockAXI4LiteSRAM.v $(GEN_SRC_DIR)/*.v
+	vcs -full64 +incdir+../generated-src -sverilog -debug_pp MockAsyncResetReg.v BottleRocketPackageTB.v -o $@
+
+.SECONDARY:
 
 .PHONY: clean
 
 clean:
-	rm -rf *.hex *.elf *.log ncverilog* INCA_libs data *.log *.dsn *.trn *.dump.d
+	rm -rf *.hex *.elf *.log ncverilog* INCA_libs data *.log *.dsn *.trn *.dump.d *.objdump *.vpd *.daidir simv test-outputs

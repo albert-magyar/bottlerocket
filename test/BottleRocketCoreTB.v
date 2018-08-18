@@ -195,14 +195,22 @@ module BottleRocketCoreTB(
 
    initial begin
       if ($value$plusargs("image=%s", image)) begin
-         $readmemh({image,".hex"}, imem.mem);
-         $readmemh({image,".hex"}, dmem.mem);
-         $shm_open({image,".dump.d"});
+         $readmemh({"test-outputs/",image,".hex"}, imem.mem);
+         $readmemh({"test-outputs/",image,".hex"}, dmem.mem);
+`ifdef VCS
+         $vcdplusfile({"test-outputs/",image,".vpd"});
+`else
+         $shm_open({"test-outputs/",image,".dump.d"});
+`endif
       end else begin
          $fatal;
       end
+`ifdef VCS
+      $vcdpluson;
+`else
       $shm_probe("AMC");
       $recordvars(core);
+`endif
       ncycles = 0;
       clk = 1'b0;
       reset = 1'b1;
@@ -215,7 +223,11 @@ module BottleRocketCoreTB(
       ncycles = ncycles + 1;
       if (ncycles > `MAXCYCLES) begin
          $info("Failure: timeout!\n");
+`ifdef VCS
+         $vcdplusclose;
+`else
          $shm_close;
+`endif
          $fatal;
       end
    end
@@ -224,11 +236,19 @@ module BottleRocketCoreTB(
       if (dmem_awvalid && dmem_wvalid && dmem_awaddr == `TOHOSTADDR) begin
          if (dmem_wdata == `SUCCESSCODE) begin
             $info("Success!\n");
+`ifdef VCS
+            $vcdplusclose;
+`else
             $shm_close;
+`endif
             $finish;
          end else begin
             $info("Failure!\n");
+`ifdef VCS
+            $vcdplusclose;
+`else
             $shm_close;
+`endif
             $fatal;
          end
       end

@@ -21,6 +21,7 @@ import chisel3.util.{RegEnable}
 import chisel3.core.withClock
 import freechips.rocketchip._
 import rocket._
+import freechips.rocketchip.util.AsyncDecoupledCrossing
 import jtag.JTAGIO
 import devices.debug.{DMIIO, DebugModuleParams, DebugTransportModuleJTAG, JtagDTMKey}
 import amba.axi4.{AXI4Bundle, AXI4Parameters}
@@ -29,8 +30,7 @@ import Params._
 class BottleRocketPackage(options: BROptions)(implicit p: config.Parameters) extends Module {
   val io = IO(new Bundle {
     val clk = Input(Clock())
-    val iBus = AXI4LiteBundle(axiParams)
-    val dBus = AXI4LiteBundle(axiParams)
+    val bus = AXI4LiteBundle(axiParams)
     val nmi = Input(Bool())
     val eip = Input(Bool())
     val wfisleep = Output(Bool())
@@ -39,15 +39,23 @@ class BottleRocketPackage(options: BROptions)(implicit p: config.Parameters) ext
   })
 
   val core = Module(new BottleRocketCore(options))
+  val arbiter = Module(new LockingAXI4LiteArbiter(3))
   val jtagDTM = Module(new DebugTransportModuleJTAG(p(DebugModuleParams).nDMIAddrSize, p(JtagDTMKey)))
 
+  io.bus <> arbiter.io.slave
+  arbiter.io.masters(0) <> core.io.sbaBus
+  arbiter.io.masters(1) <> core.io.dBus
+  arbiter.io.masters(2) <> core.io.iBus
+
   core.io.constclk := io.clk
-  io.iBus <> core.io.iBus
-  io.dBus <> core.io.dBus
   core.io.nmi := io.nmi
   core.io.eip := io.eip
-  core.io.dmi <> jtagDTM.io.dmi
   io.wfisleep := core.io.wfisleep
+
+  val dmiReqSync = AsyncDecoupledCrossing(io.jtag.TCK, jtagDTM.io.fsmReset, jtagDTM.io.dmi.req, core.io.constclk, core.reset, 1)
+  val dmiRespSync = AsyncDecoupledCrossing(core.io.constclk, core.reset, core.io.dmi.resp, io.jtag.TCK, jtagDTM.io.fsmReset, 1)
+  core.io.dmi.req <> dmiReqSync
+  jtagDTM.io.dmi.resp <> dmiRespSync
 
   jtagDTM.io.jtag <> io.jtag
   jtagDTM.clock := io.jtag.TCK

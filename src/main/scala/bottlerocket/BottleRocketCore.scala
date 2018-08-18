@@ -30,6 +30,7 @@ class BottleRocketCore(options: BROptions)(implicit p: config.Parameters) extend
     val constclk = Input(Clock())
     val iBus = AXI4LiteBundle(axiParams)
     val dBus = AXI4LiteBundle(axiParams)
+    val sbaBus = AXI4LiteBundle(axiParams)
     val nmi = Input(Bool())
     val eip = Input(Bool())
     val dmi = Flipped(new DMIIO()(p))
@@ -539,6 +540,7 @@ class BottleRocketCore(options: BROptions)(implicit p: config.Parameters) extend
     singleStepped := Bool(false)
   }
 
+  io.sbaBus <> debug.io.bus
   debug.io.singleStepHalt := csrfile.io.status.debug && singleStepped
   debug.io.debugModeActive := csrfile.io.status.debug
   debug.io.csrrdata := csrfile.io.rw.rdata

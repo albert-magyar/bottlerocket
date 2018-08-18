@@ -25,8 +25,8 @@ $(GENDIR)/BottleRocketCore.v:
 
 .PHONY: check-paths test clean
 
-check-paths:
-	sbt "runMain bottlerocket.BottleRocketPathChecker --target-dir path-check-output --reset-vec ${RVEC}"
+package:
+	sbt "runMain bottlerocket.BottleRocketGenerator --target-dir generated-src --reset-vec 0 --package"
 
 test: $(GENDIR)/BottleRocketCore.v
 	$(MAKE) -C test clean
