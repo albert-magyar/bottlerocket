@@ -305,7 +305,7 @@ task write_gpr;
    input [4:0] addr;
    input [31:0] wdata;
    begin
-      write_any_reg({11'h200, addr}, wdata);
+      write_any_reg({11'h080, addr}, wdata);
    end
 endtask
 
@@ -313,7 +313,7 @@ task read_gpr;
    input [4:0] addr;
    output [31:0] rdata;
    begin
-      read_any_reg({11'h200, addr}, rdata);
+      read_any_reg({11'h080, addr}, rdata);
    end
 endtask
 

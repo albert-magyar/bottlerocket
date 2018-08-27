@@ -9,6 +9,9 @@ default: spinloop.hex
 spinloop.elf: spinloop.ld spinloop.o init.o
 	$(RISCV_LD) -o $@ -Tspinloop.ld init.o spinloop.o
 
+selfjump.elf: spinloop.ld selfjump.o
+	$(RISCV_LD) -o $@ -Tspinloop.ld selfjump.o
+
 %.hex: %.elf
 	elf2hex 4 32768 $< > $@
 
