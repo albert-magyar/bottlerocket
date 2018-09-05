@@ -39,7 +39,7 @@ class BottleRocketPackage(options: BROptions)(implicit p: config.Parameters) ext
   })
 
   val core = Module(new BottleRocketCore(options))
-  val arbiter = Module(new LockingAXI4LiteArbiter(3))
+  val arbiter = Module(new AXI4LiteArbiter(3))
   val jtagDTM = Module(new DebugTransportModuleJTAG(p(DebugModuleParams).nDMIAddrSize, p(JtagDTMKey)))
 
   io.bus <> arbiter.io.slave

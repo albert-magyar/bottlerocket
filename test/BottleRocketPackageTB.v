@@ -132,7 +132,7 @@ module BottleRocketPackageTB(
    initial begin
       if ($value$plusargs("image=%s", image_name)) begin
          $readmemh({"test-outputs/",image_name,".hex"}, image);
-         $vcdplusfile({image_name,"_jtag_test.vpd"});
+         $vcdplusfile({"test-outputs/",image_name,"_jtag_test.vpd"});
       end else begin
          $info("Failure: cannot find image!\n");
          $fatal;
@@ -179,8 +179,9 @@ module BottleRocketPackageTB(
    always @(posedge coreclk) begin
       ncycles = ncycles + 1;
       if (ncycles > `MAXCYCLES) begin
+         $info("Failure: timeout!\n");
          $vcdplusclose;
-         $finish;
+         $fatal;
       end
    end
 

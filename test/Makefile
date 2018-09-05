@@ -84,7 +84,13 @@ RV32MI_TESTS = breakpoint \
 
 TESTS = $(RV32UI_TESTS) # $(RV32MI_TESTS)
 
-default: $(addprefix test-outputs/, $(addsuffix .log, $(TESTS)))
+TEST_LOGS = $(addprefix test-outputs/, $(addsuffix .log, $(TESTS)))
+
+JTAG_TEST_LOGS = $(addprefix test-outputs/, $(addsuffix _jtag_test.log, $(TESTS)))
+
+default: $(TEST_LOGS)
+
+jtag-test: $(JTAG_TEST_LOGS)
 
 simv: BottleRocketCoreTB.v MockAXI4LiteSRAM.v $(GEN_SRC_DIR)/*.v
 	vcs $(VCS_OPTS) $<
@@ -104,6 +110,9 @@ test-outputs/%.elf: $(RISCV_TEST_BASE)/isa/rv32ui/%.S | test-outputs
 
 test-outputs/%.elf: $(RISCV_TEST_BASE)/isa/rv32mi/%.S | test-outputs
 	$(RISCV_GCC) $(RISCV_GCC_OPTS) -I$(RISCV_TEST_BASE)/env/p -I$(RISCV_TEST_BASE)/isa/macros/scalar -Ttest.ld -o $@ $<
+
+test-outputs/%_jtag_test.log: test-outputs/%.hex $(GEN_SRC_DIR)/*.v *.v package-sim | test-outputs
+	./package-sim +image=$* &> $@
 
 package-sim: BottleRocketPackageTB.v JTAGDTM.v MockAsyncResetReg.v MockAXI4LiteSRAM.v $(GEN_SRC_DIR)/*.v
 	vcs -full64 +incdir+../generated-src -sverilog -debug_pp MockAsyncResetReg.v BottleRocketPackageTB.v -o $@
