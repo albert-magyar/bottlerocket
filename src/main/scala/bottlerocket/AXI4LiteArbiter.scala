@@ -12,10 +12,13 @@ class AXI4LiteArbiter(nMasters: Int)(implicit p: config.Parameters) extends Modu
     val slave = AXI4LiteBundle(axiParams)
   })
 
+  val combinedArbitratedIdx = PriorityEncoder(io.masters.flatMap(m => Seq(m.ar.valid, m.aw.valid)))
+  val readWins = combinedArbitratedIdx(0) === 0.U
+
   // Read arbiter
   val outstandingReadQ = Module(new Queue(UInt(width = log2Up(nMasters).W), 2))
   val outstandingReadIdx = outstandingReadQ.io.deq.bits
-  val allowNewReadCmd = outstandingReadQ.io.enq.ready
+  val allowNewReadCmd = outstandingReadQ.io.enq.ready && readWins
   val arbitratedReadIdx = PriorityEncoder(io.masters.map(m => (m.ar.valid)))
   outstandingReadQ.io.enq.valid := io.masters(arbitratedReadIdx).ar.fire
   outstandingReadQ.io.enq.bits := arbitratedReadIdx
@@ -36,7 +39,7 @@ class AXI4LiteArbiter(nMasters: Int)(implicit p: config.Parameters) extends Modu
   val outstandingWriteIdx = outstandingWriteQ.io.deq.bits
   val awSentWUnsent = RegInit(false.B)
   val awSentWUnsentIdx = Reg(UInt())
-  val allowNewWriteCmd = outstandingWriteQ.io.enq.ready && !awSentWUnsent
+  val allowNewWriteCmd = outstandingWriteQ.io.enq.ready && !awSentWUnsent && !readWins
   val arbitratedWriteIdx = Mux(awSentWUnsent, awSentWUnsentIdx, PriorityEncoder(io.masters.map(m => (m.aw.valid))))
 
   when (io.masters(arbitratedWriteIdx).aw.fire && !io.masters(arbitratedWriteIdx).w.fire) {
