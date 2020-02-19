@@ -49,6 +49,19 @@ class AllFlopsAsyncNegedgeReset extends Transform {
 
   private val Zero = UIntLiteral(0, IntWidth(1))
 
+  private def transformRegRefs(isReset: collection.Set[String])(expr: Expression): Expression = {
+    expr match {
+      case WRef(name, tpe: GroundType, RegKind, MALE) if (isReset(name)) =>
+        val iRef = WRef(name, bbTpe(tpe), InstanceKind, MALE)
+        getField(iRef, "Q")
+      case e => e.map(transformRegRefs(isReset))
+    }
+  }
+
+  private def updateRefs(isReset: collection.Set[String])(stmt: Statement): Statement = {
+    stmt.map(updateRefs(isReset)).map(transformRegRefs(isReset))
+  }
+
   private def transformRegs(ns: Namespace, regBBs: mutable.Map[ResetFlopParams, AResetNFlop], isReset: mutable.Set[String])(stmt: Statement): Statement = {
     stmt match {
       case reg @ DefRegister(_, _, _, _, Zero, _) => reg
@@ -64,10 +77,7 @@ class AllFlopsAsyncNegedgeReset extends Transform {
       case Connect(info, WRef(name, tpe: GroundType, RegKind, FEMALE), rhs) if (isReset(name)) =>
         val iRef = WRef(name, bbTpe(tpe), InstanceKind, MALE)
         Connect(info, getField(iRef, "D"), rhs)
-      case Connect(info, lhs, WRef(name, tpe: GroundType, RegKind, MALE)) if (isReset(name)) =>
-        val iRef = WRef(name, bbTpe(tpe), InstanceKind, MALE)
-        Connect(info, lhs, getField(iRef, "Q"))
-      case s => s map transformRegs(ns, regBBs, isReset)
+      case s => s
     }
   }
 
@@ -75,7 +85,12 @@ class AllFlopsAsyncNegedgeReset extends Transform {
     val moduleNS = Namespace(state.circuit)
     val regBBs = new mutable.LinkedHashMap[ResetFlopParams, AResetNFlop]
 
-    def onModule(m: DefModule): DefModule = m.map(transformRegs(moduleNS, regBBs, new mutable.LinkedHashSet[String]))
+    def onModule(m: DefModule): DefModule = {
+      val isReset = new mutable.LinkedHashSet[String]
+      val intermediate = m.map(transformRegs(moduleNS, regBBs, isReset))
+      intermediate.map(updateRefs(isReset))
+    }
+
     val transformedCircuit = state.circuit.map(onModule)
 
     val models = regBBs.map { case (k, v) => v.defn }
