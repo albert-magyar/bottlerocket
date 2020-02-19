@@ -15,6 +15,7 @@
 addCompilerPlugin("org.scalamacros" % "paradise" % "2.1.0" cross CrossVersion.full)
 
 // managed dependencies
+val firrtl = "edu.berkeley.cs" %% "firrtl" % "1.0-SNAPSHOT_2017-06-22"
 val chisel3 = "edu.berkeley.cs" %% "chisel3" % "3.0-SNAPSHOT_2017-06-22"
 val scalatest = "org.scalatest" %% "scalatest" % "2.2.5"
 val scalacheck = "org.scalacheck" %% "scalacheck" % "1.12.4"
@@ -27,7 +28,7 @@ lazy val commonSettings = Seq(
     Resolver.sonatypeRepo("snapshots"),
     Resolver.sonatypeRepo("releases")
   ),
-  libraryDependencies ++= Seq(chisel3, scalatest, scalacheck)
+  libraryDependencies ++= Seq(firrtl, chisel3, scalatest, scalacheck)
 )
 
 lazy val hardfloat = (project in file("./third_party/rocket-chip/hardfloat"))
