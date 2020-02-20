@@ -26,7 +26,7 @@ $(GENDIR)/BottleRocketCore.v:
 .PHONY: check-paths test clean
 
 package:
-	sbt "runMain bottlerocket.BottleRocketGenerator --target-dir generated-src --reset-vec 0 --package -fct bottlerocket.transforms.AllFlopsAsyncNegedgeReset"
+	sbt "runMain bottlerocket.BottleRocketGenerator --target-dir generated-src --reset-vec 0 -fct bottlerocket.transforms.AllFlopsAsyncNegedgeReset --package"
 
 test: $(GENDIR)/BottleRocketCore.v
 	$(MAKE) -C test clean
@@ -35,3 +35,6 @@ test: $(GENDIR)/BottleRocketCore.v
 clean:
 	$(MAKE) -C test clean
 	rm -rf generated-src
+
+distclean:
+	rm -rf generated-src target project/target

@@ -77,7 +77,7 @@ class AllFlopsAsyncNegedgeReset extends Transform {
       case Connect(info, WRef(name, tpe: GroundType, RegKind, FEMALE), rhs) if (isReset(name)) =>
         val iRef = WRef(name, bbTpe(tpe), InstanceKind, MALE)
         Connect(info, getField(iRef, "D"), rhs)
-      case s => s
+      case s => s.map(transformRegs(ns, regBBs, isReset))
     }
   }
 
