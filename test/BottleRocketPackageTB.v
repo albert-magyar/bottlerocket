@@ -73,7 +73,7 @@ module BottleRocketPackageTB(
 		         );
 
    BottleRocketPackage br_package(.clock(coreclk),
-                                  .reset(corereset),
+                                  .reset(~corereset),
                                   .io_clk(coreclk),
                                   .io_nmi(1'b0),
                                   .io_eip(1'b0),

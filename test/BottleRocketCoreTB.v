@@ -123,7 +123,7 @@ module BottleRocketCoreTB(
 
    BottleRocketCore core(
                          .clock(clk),
-                         .reset(reset),
+                         .reset(~reset),
                          .io_constclk(clk),
                          .io_nmi(1'b0),
                          .io_eip(1'b0),
