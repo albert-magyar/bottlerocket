@@ -2,9 +2,6 @@
 `define TOHOST_ADDR 'h6000
 `define SUCCESS 1
 
-`include "BottleRocketPackage.v"
-`include "MockAXI4LiteSRAM.v"
-
 module BottleRocketPackageTB(
                              );
 

@@ -14,9 +14,6 @@
 
 // Unit-level testbench for the BottleRocket core with RISC-V isa tests
 
-`include "BottleRocketCore.v"
-`include "MockAXI4LiteSRAM.v"
-
 `define MAXCYCLES 100000
 `define TOHOSTADDR 'h00006000
 `define SUCCESSCODE 1
