@@ -16,10 +16,11 @@ object AResetNFlop {
 
   def bbTpe(tpe: GroundType): BundleType = {
     BundleType(Seq(
+      Field("rst", Flip, BoolType),
       Field("clk", Flip, ClockType),
-      Field("resetn", Flip, BoolType),
-      Field("D", Flip, tpe),
-      Field("Q", Default, tpe)))
+      Field("en", Flip, BoolType),
+      Field("d", Flip, tpe),
+      Field("q", Default, tpe)))
   }
 
   def bundleToPorts(tpe: BundleType): Seq[Port] = tpe.fields.map {
@@ -53,7 +54,7 @@ class AllFlopsAsyncNegedgeReset extends Transform {
     expr match {
       case WRef(name, tpe: GroundType, RegKind, MALE) if (isReset(name)) =>
         val iRef = WRef(name, bbTpe(tpe), InstanceKind, MALE)
-        getField(iRef, "Q")
+        getField(iRef, "q")
       case e => e.map(transformRegRefs(isReset))
     }
   }
@@ -71,12 +72,17 @@ class AllFlopsAsyncNegedgeReset extends Transform {
         val inst = WDefInstance(info, name, bb.defn.name, bb.refTpe)
         val iRef = WRef(name, bb.refTpe, InstanceKind, MALE)
         val clockConn = Connect(info, getField(iRef, "clk"), clock)
-        val resetConn = Connect(info, getField(iRef, "resetn"), reset)
+        val enConn = Connect(info, getField(iRef, "en"), UIntLiteral(1, IntWidth(1)))
+        val resetConn = Connect(info, getField(iRef, "rst"), reset)
         isReset += name
-        Block(Seq(inst, clockConn, resetConn))
+        Block(Seq(inst, clockConn, enConn, resetConn))
       case Connect(info, WRef(name, tpe: GroundType, RegKind, FEMALE), rhs) if (isReset(name)) =>
         val iRef = WRef(name, bbTpe(tpe), InstanceKind, MALE)
-        Connect(info, getField(iRef, "D"), rhs)
+        Connect(info, getField(iRef, "d"), rhs)
+      case wi @ WDefInstance(_, _, "AsyncResetReg", BundleType(fields)) =>
+        val params = ResetFlopParams(Utils.BoolType, 0)
+        val bb = regBBs.getOrElseUpdate(params, new AResetNFlop(ns.newName(ModelName), params))
+        wi.copy(module = bb.defn.name, tpe = bb.refTpe)
       case s => s.map(transformRegs(ns, regBBs, isReset))
     }
   }
