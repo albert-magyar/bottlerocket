@@ -474,7 +474,7 @@ class BottleRocketCore(options: BROptions)(implicit p: config.Parameters) extend
 
   val incAmt_IF = Mux(rvc_IF, UInt(2), UInt(4))
   when (io.nmi) {
-    nextPC := UInt(p(NMI_VEC))
+    nextPC := UInt(options.nmiVec)
   } .elsewhen (exception_WB || csrfile.io.eret) {
     nextPC := csrfile.io.evec
   } .otherwise {

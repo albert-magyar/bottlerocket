@@ -19,7 +19,7 @@ package bottlerocket
 import chisel3._
 import firrtl.{ExecutionOptionsManager, HasFirrtlOptions, CommonOptions, FirrtlExecutionOptions, ComposableOptions}
 
-case class BROptions(nProgInterrupts: Int = 240, resetVec: BigInt = BigInt("100", 16), emitPackage: Boolean = false) extends ComposableOptions
+case class BROptions(nProgInterrupts: Int = 240, resetVec: BigInt = BigInt("100", 16), emitPackage: Boolean = false, nmiVec: BigInt = BigInt("100", 16)) extends ComposableOptions
 
 object BottleRocketGenerator extends App {
   val config = new DefaultBottleRocketConfig
@@ -36,6 +36,10 @@ object BottleRocketGenerator extends App {
       .abbr("rstVec")
       .valueName("<addr-hex>")
       .foreach { str => brOptions = brOptions.copy(resetVec = BigInt(str, 16)) }
+    parser.opt[String]("nmi-vec")
+      .abbr("nmiVec")
+      .valueName("<addr-hex>")
+      .foreach { str => brOptions = brOptions.copy(nmiVec = BigInt(str, 16)) }
     parser.opt[Unit]("package")
       .abbr("package")
       .foreach { _ => brOptions = brOptions.copy(emitPackage = true) }

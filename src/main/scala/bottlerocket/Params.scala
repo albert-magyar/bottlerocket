@@ -43,8 +43,6 @@ package object Params {
   val axiParams = new AXI4BundleParameters(32, 32, 16, 16)
 }
 
-case object NMI_VEC extends Field[BigInt]
-
 class TileConfig extends Config((site, here, up) => {
   case TileKey => RocketTileParams(
     core = RocketCoreParams(
@@ -60,7 +58,6 @@ class TileConfig extends Config((site, here, up) => {
     icache = Some(ICacheParams()))
   case BuildRoCC => false
   case DebugModuleParams => DefaultDebugModuleParams(site(XLen))
-  case NMI_VEC => BigInt("100", 16)
 })
 
 class DefaultBottleRocketConfig extends Config(new TileConfig ++ new TinyConfig)
