@@ -21,12 +21,12 @@ default: $(GENDIR)/BottleRocketCore.v
 .PHONY: $(GENDIR)/BottleRocketCore.v
 $(GENDIR)/BottleRocketCore.v:
 	rm -rf generated-src/*
-	sbt "runMain bottlerocket.BottleRocketGenerator --target-dir generated-src --reset-vec ${RVEC} -fct bottlerocket.transforms.AllFlopsAsyncNegedgeReset"
+	sbt "runMain bottlerocket.BottleRocketGenerator --target-dir generated-src --reset-vec ${RVEC}"
 
 .PHONY: check-paths test clean
 
 package:
-	sbt "runMain bottlerocket.BottleRocketGenerator --target-dir generated-src --reset-vec 0 -fct bottlerocket.transforms.AllFlopsAsyncNegedgeReset --package"
+	sbt "runMain bottlerocket.BottleRocketGenerator --target-dir generated-src --reset-vec 0 --package"
 
 test: $(GENDIR)/BottleRocketCore.v
 	$(MAKE) -C test clean
