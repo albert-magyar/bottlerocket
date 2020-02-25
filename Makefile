@@ -15,18 +15,19 @@
 GENDIR := generated-src
 
 RVEC ?= 4100
+NMIVEC ?= 8100
 
 default: $(GENDIR)/BottleRocketCore.v
 
 .PHONY: $(GENDIR)/BottleRocketCore.v
 $(GENDIR)/BottleRocketCore.v:
 	rm -rf generated-src/*
-	sbt "runMain bottlerocket.BottleRocketGenerator --target-dir generated-src --reset-vec ${RVEC}"
+	sbt "runMain bottlerocket.BottleRocketGenerator --target-dir generated-src --reset-vec ${RVEC} --nmi-vec ${NMIVEC}"
 
 .PHONY: check-paths test clean
 
 package:
-	sbt "runMain bottlerocket.BottleRocketGenerator --target-dir generated-src --reset-vec 0 --package"
+	sbt "runMain bottlerocket.BottleRocketGenerator --target-dir generated-src --reset-vec ${RVEC} --nmi-vec ${NMIVEC} --package"
 
 test: $(GENDIR)/BottleRocketCore.v
 	$(MAKE) -C test clean
